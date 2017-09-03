@@ -1,0 +1,28 @@
+<md-card>
+    <md-card-header>
+      <div md-card-avatar>
+          <i *ngIf="subscribed" class="material-icons avatar-font-size" style="color: green">wifi_tethering</i>
+          <i *ngIf="!subscribed" class="material-icons avatar-font-size">perm_scan_wifi</i>
+      </div>
+      <md-card-title>Websocket</md-card-title>
+      <md-card-subtitle>Bütün veriyi çek!</md-card-subtitle>
+      <span class="example-spacer"></span>
+      <button md-button color="primary" (click)="onSubcribe()">Connect</button>
+      <button md-button color="primary" (click)="onUnsubcribe()">Disconnect</button>
+    </md-card-header>
+    <md-card-content>
+      <div fxLayout="row" class="chart-content" *ngIf="subscribed">
+        <ngx-charts-pie-chart
+          [view]="view"
+          [scheme]="colorScheme"
+          [results]="single"
+          [legend]="showLegend"
+          [explodeSlices]="explodeSlices"
+          [labels]="showLabels"
+          [doughnut]="doughnut"
+          [gradient]="gradient"
+          (select)="onSelect($event)">
+        </ngx-charts-pie-chart>
+      </div>
+    </md-card-content>
+</md-card>
