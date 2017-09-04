@@ -1,28 +1,56 @@
-# WebsocketApp
+# STOMP
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.3.1.
+STOMP basit metin yönelimli mesajlaşma protokolüdür.
 
-## Development server
+STOMP, arabulucu sunucular aracılığıyla istemciler arasında eşzamansız mesajlaşma iletimi için tasarlanmış basit ve birlikte çalışabilir bir protokoldür. Bu istemciler ve sunucular arasında iletilen mesajlar için metin tabanlı bir kablo biçimi tanımlar.
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+## Protokol
 
-## Code scaffolding
+Bir STOMP sunucusu, mesajların gönderilebileceği bir varış yeri kümesi olarak modellenmiştir. STOMP protokolü hedefleri opak dize(Sunucu tarafından belirlenen ve istemci tarafından değiştirilmeden gönderilecek bir veri dizesi.) olarak kabul eder ve sözdizimleri sunucunun uygulanmasına özgüdür. Buna ek olarak STOMP, hedeflerin teslimat semantiklerinin ne olması gerektiğini tanımlamaz. Hedeflerin teslimatı veya "mesaj alışverişi" anlamları, sunucudan sunucuya hatta hedeften hedefe değişebilir. Bu, sunucuların STOMP ile destekleyebilecekleri semantiklerle yaratıcı olmasını sağlar.
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+Bir STOMP istemcisi, iki (muhtemelen eşzamanlı) modda hareket edebilen bir kullanıcı aracısıdır:
 
-## Build
+- bir üretici olarak, bir SEND çerçevesiyle(FRAME) sunucu üzerindeki bir hedefe(DESTINATION) mesaj göndermek
+- bir tüketici olarak belirli bir varış noktası için bir SUBSCRIBE çerçevesi gönderir ve sunucudan MESSAGE çerçeveleri olarak mesajlar alır.
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `-prod` flag for a production build.
+## Çerçeve
 
-## Running unit tests
+STOMP, iki yönlü akış ağı protokolü (TCP gibi) altında varsayan güvenilir  bir çerçeve tabanlı bir protokoldür. İstemci ve sunucu, akış üzerinden gönderilen STOMP çerçeveleri kullanarak iletişim kuracaklardır.
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+## Body
 
-## Running end-to-end tests
+Yalnızca SEND, MESSAGE ve ERROR çerçevelerinin bir gövdesi olabilir. Diğer tüm çerçeveler bir gövdeye sahip DEĞİLDİR.
 
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-Before running the tests make sure you are serving the app via `ng serve`.
+### Standart Headers
 
-## Further help
+Çoğu çerçeveyle birlikte bazı başlıklar kullanılmalı ve özel bir anlam taşımalıdır.
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+### Header content-length
+
+Tüm çerçeveler bir content-length başlığı içerebilir. Mesaj gövdesinin uzunluğu için bu başlık bir sekizlik sayıdır.
+
+### Header content-type
+
+Eğer çerçeve bir gövde varsa, SEND, MESSAGE ve ERROR çerçeveleri, alıcının çerçeve gövdesini yorumlamasına yardımcı olacak bir içerik türü başlıklığı içermesi GEREKİR. Başlık içerik-türü ayarlanırsa, değeri vücudun biçimini tanımlayan bir MIME türü OLMALI. Aksi takdirde alıcı, gövdeyi ikili damla olarak görmesi GEREKİR.
+
+### Header receipt
+
+CONNECT dışında herhangi bir istemci çerçevesi, rasgele bir değere sahip bir alındı başlığı belirtebilir. Bu, sunucunun istemci çerçevesinin bir RECEIPT çerçevesi ile işlemesini onaylamasına neden olacaktır.
+
+## Boyut Sınırları
+
+Kötü niyetli istemcilerin bir sunucudaki bellek tahsisini istismar etmesini önlemek için, sunucular aşağıdakiler üzerine maksimum sınırlar bırakabilir:
+
+- tek bir çerçevede izin verilen çerçeve başlıklarının sayısı
+- başlık satırlarının maksimum uzunluğu
+- bir çerçeve gövdesinin maksimum boyutu
+
+Bu sınırlar aşılırsa, sunucu istemciye bir ERROR çerçevesi göndermeli ve daha sonra bağlantıyı kapatmalıdır.
+
+## Bağlantı Duraksama Süresi
+
+STOMP sunucuları, hızla bağlanan ve bağlantısını kesen istemcileri destekleyebilmelidir.
+
+Bu bağlantı sıfırlanmadan önce yalnızca kapalı bağlantıların kısa süre sunucuyu oyalanmasına izin vereceğini anlamına gelir.
+
+Sonuç olarak, bir istemci soket sıfırlanmadan önce sunucu tarafından gönderilen son kareyi(örneğin bir ERROR çerçevesi veya DISCONNECT çerçevesine yanıt olarak RECEIPT çerçevesi) alamayabilir.
