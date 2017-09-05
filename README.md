@@ -54,3 +54,8 @@ STOMP sunucuları, hızla bağlanan ve bağlantısını kesen istemcileri destek
 Bu bağlantı sıfırlanmadan önce yalnızca kapalı bağlantıların kısa süre sunucuyu oyalanmasına izin vereceğini anlamına gelir.
 
 Sonuç olarak, bir istemci soket sıfırlanmadan önce sunucu tarafından gönderilen son kareyi(örneğin bir ERROR çerçevesi veya DISCONNECT çerçevesine yanıt olarak RECEIPT çerçevesi) alamayabilir.
+
+## Kaynaklar
+
+[STOMP 1.2 Implementations](https://stomp.github.io/stomp-specification-1.2.html)
+[STOMP Over Websocket](https://stomp-js.github.io/stomp-websocket/codo/alphabetical_index.html)
