@@ -9,7 +9,8 @@ import 'rxjs/add/observable/throw';
 
 import { SampleModel } from '../models/sample.model';
 
-export const BASE_URL = 'http://www.mocky.io/v2/';
+export const BASE_URL = 'http://192.168.0.103:8080/';
+export const SECOND_URL = 'http://192.168.0.110:8080/';
 
 @Injectable()
 export class RestAPIServices {
@@ -17,7 +18,7 @@ export class RestAPIServices {
 
     getAllData(): Observable<SampleModel[]> {
         return this.http
-            .get(`${BASE_URL}59abd1641000006306f9c1ce`) /** <<-- rest/api/stocks */
+            .get(`${BASE_URL}rest/api/stocks`) /** <<-- rest/api/stocks */
             .map(response => response.json())
             .do(() => console.log('Rest Service Get All Data!'))
             .catch(this.getRequestError);
@@ -28,7 +29,7 @@ export class RestAPIServices {
         const options = new RequestOptions({headers: header});
 
         return this.http
-            .post(`${BASE_URL}59ac3218100000550cf9c242`, data, options);
+            .post(`${SECOND_URL}rest/api/create/stock`, data, options);
     }
 
     private getRequestError(error: any) {

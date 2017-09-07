@@ -1,12 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy, Input } from '@angular/core';
 
 import { Observable } from 'rxjs/Observable';
 import { Subscription } from 'rxjs/Subscription';
 
-import { StompService } from 'ng2-stomp-service';
-
-import { SampleModel } from '../../../models/sample.model';
-import { single } from '../../../models/chart-info.model';
+import { Message } from '@stomp/stompjs';
+import { StompState } from '@stomp/ng2-stompjs';
+import { ReceiverStompService, StompMessageService } from '../../../services';
+import { SampleModel, single } from '../../../models';
 
 @Component({
     selector: 'app-socket-recipient',
@@ -21,73 +21,103 @@ import { single } from '../../../models/chart-info.model';
         }
     `]
 })
-export class SocketRecipientComponent {
+export class SocketRecipientComponent implements OnInit, OnDestroy {
 
-    // Advanced Pie Chart
-    showLegend      = true;
-    gradient        = false;
-    showLabels      = true;
-    explodeSlices   = false;
-    doughnut        = false;
-    colorScheme     = {
-      domain        : ['#2ecc71', '#e74c3c', '#f1c40f', '#34495e']
+    /* Pie Chart Options */
+    showLegend              = true;
+    showLabels              = true;
+    explodeSlices           = false;
+    doughnut                = false;
+    gradient                = false;
+    receiverTitle           = ""
+    colorScheme             = {
+      domain                : ['#2ecc71', '#e74c3c', '#f1c40f', '#34495e']
     };
-
+    // Stream of messages
+    private subscription    : Subscription;
+    public messages         : Observable<Message>;
     // Subscription status
-    public subscribed: boolean;
-    private subscription: any;
-    private timeMeasurement: any = {};
+    public subscribed       : boolean;
+    // Array of historic message (bodies)
+    public messageQueue     : SampleModel[];
+    // A count of messages received
+    public messageCount     = 0;
+    public state            : Observable<string>;
+    public stateTitle       : string;
+    private timeMeasurement : any = {};
     
-    constructor(private stomp: StompService) {
-        this.stomp.configure({
-            host:'http://192.168.0.103:8080/register',
-            debug:true,
-            queue:{'init':false}
-        });
+    constructor(
+        private receiverStompService: ReceiverStompService, 
+        private messageService: StompMessageService) {}
+
+    ngOnInit() {
+        this.subscribed = false;
+        this.state = this.receiverStompService.state
+            .map((state: number) => {
+                this.stateTitle = StompState[state].toString();
+                return StompState[state]
+            });
     }
 
-    onSelect(event) {
-        console.log(event);
-    }
+    ngOnDestroy() { this.onUnsubcribe(); }
+
+    onSelect(event) { console.log('Selected Chart: ', event); }
 
     onSubcribe(): void {
-        this.stomp.startConnect().then(() => {
-            this.stomp.done('init');            
-            this.timeMeasurement.start = new Date().getTime();
-            this.subscription = this.stomp.subscribe('/app/stocks', this.response);
-            this.subscribed = true;
-        });
+        if (this.subscribed) return;
+        
+        this.timeMeasurement.start = new Date().getTime();
+        
+        // Stream of messages
+        this.messages = this.receiverStompService.subscribe('/app/stocks');
+
+        // Subscribe a function to be run on_next message
+        this.subscription = this.messages.subscribe(this.on_next);
     }
 
     onUnsubcribe(): void {
-        this.stomp.disconnect().then(() => {
-            //this.subscription.unsubscribe();
-            this.subscribed = false;
-        });
+        if ( !this.subscribed ) return;
+        // This will internally unsubscribe from Stomp Broker
+        // There are two subscriptions - one created explicitly, the other created in the template by use of 'async'
+        this.subscription.unsubscribe();
+        this.subscription   = null;
+        this.messages       = null;
+        this.subscribed     = false;
     }
 
-    //response
-    public response = (data) => {
-        console.log('Get All Data!');
-        let blob = new Blob([data], { type: 'application/json' });
-        let length = data.length;
+    /** Consume a message from the _orderStompService */
+    public on_next = (message: Message) => {
+        this.subscribed = true;
+        // Store message in "historic messages" queue
+        this.messageQueue = JSON.parse(message.body);
+
+        let blob = new Blob([this.messageQueue], { type: 'application/json' });
+        this.receiverTitle = this.messageQueue.length.toString() + ' (Adet)';
+
         this.timeMeasurement.end = new Date().getTime();
         const delta = this.timeMeasurement.end - this.timeMeasurement.start;
-        
+
         for(let i = 0; i < single.length; i++) {
-            if(single[i].name === 'Toplam(adet)') {
-                single[i].value = length;
+            if(single[i].name === 'Boyut(Mb)') {
+                const fileSize = blob.size / 1024;
+                const size = parseFloat(fileSize.toString()).toFixed(2);
+                single[i].value = parseFloat(size);
             }
 
-            if(single[i].name === 'Boyut(Kb)') {
-                single[i].value = blob.size;
-            }
-
-            if(single[i].name === 'Süre(ms)') {
-                single[i].value = delta;
+            if(single[i].name === 'Süre(S)') {
+                const second = delta / 1000;
+                const time = parseFloat(second.toString()).toFixed(2);
+                single[i].value = parseFloat(time);
             }
         }
         
         Object.assign(this, { single }); 
+
+        // send message
+        this.messageService.changeMessage(message.body);
+    }
+
+    private zeroFill(num, len) {
+        return (len > num.toString().length)?((Array(len).join('0') + num).slice(-len)):num;
     }
 }

@@ -3,19 +3,18 @@
       <div md-card-avatar class="">
         <i class="material-icons avatar-font-size" [style.color]="isDisplay ? 'green' : 'black'">language</i>
       </div>
-      <md-card-title>Rest API</md-card-title>
-      <md-card-subtitle>Bütün veriyi al!</md-card-subtitle>
+      <md-card-title>Rest API [192.168.0.103]</md-card-title>
       <span class="example-spacer"></span>
       <button md-button color="primary" (click)="getAllData()">Tüm Verileri Al</button>
     </md-card-header>
     <md-card-content>
       <div fxLayout="row" class="chart-content" *ngIf="isDisplay">
         <ngx-charts-pie-chart
-          [view]="view"
           [scheme]="colorScheme"
           [results]="single"
           [legend]="showLegend"
           [explodeSlices]="explodeSlices"
+          [legendTitle]="receiverTitle"
           [labels]="showLabels"
           [doughnut]="doughnut"
           [gradient]="gradient"

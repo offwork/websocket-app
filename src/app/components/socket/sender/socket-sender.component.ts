@@ -1,12 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 
 import { Observable } from 'rxjs/Observable';
-import { Subscription } from 'rxjs/Subscription';
 
-import { StompService } from 'ng2-stomp-service';
-
-import { SampleModel } from '../../../models/sample.model';
-import { single } from '../../../models/chart-info.model';
+import { StompState } from '@stomp/ng2-stompjs';
+import { SenderStompService, StompMessageService } from '../../../services';
+import { SampleModel, single } from '../../../models';
 
 @Component({
     selector: 'app-socket-sender',
@@ -21,73 +19,104 @@ import { single } from '../../../models/chart-info.model';
         }
     `]
 })
-export class SocketSenderComponent {
+export class SocketSenderComponent implements OnInit, OnDestroy {
 
-    // Advanced Pie Chart
-    showLegend      = true;
-    gradient        = false;
-    showLabels      = true;
-    explodeSlices   = false;
-    doughnut        = false;
-    colorScheme     = {
-      domain        : ['#2ecc71', '#e74c3c', '#f1c40f', '#34495e']
+    /* Pie Chart Options */
+    showLegend              = true;
+    showLabels              = true;
+    explodeSlices           = false;
+    doughnut                = false;
+    gradient                = false;
+    receiverTitle           = ""
+    colorScheme             = {
+      domain                : ['#2ecc71', '#e74c3c', '#f1c40f', '#34495e']
     };
 
     // Subscription status
-    public subscribed: boolean;
-    private subscription: any;
-    private timeMeasurement: any = {};
+    public subscribed       : boolean;
+    public messageQueue     : SampleModel[];
+    public sampleData       = [];
+    public state            : Observable<string>;
+    public stateTitle       : string;
+    private timeMeasurement : any = {};
     
-    constructor(private stomp: StompService) {
-        this.stomp.configure({
-            host:'http://192.168.0.110:8080/register',
-            debug:true,
-            queue:{'init':false}
-        });
+    constructor(
+        private senderStompService: SenderStompService, 
+        private messageService: StompMessageService) {
+        //this.messageService.currentMessage.subscribe(message => this.sampleData = message);
+        for (let i = 0; i < 500; i++) {
+            this.sampleData.push({ 
+                'name': this.randomizeCollection(9, '0123456789abcdefghijklmnopqrstuvwxyz'),
+                'name1': this.randomizeCollection(9, '0123456789abcdefghijklmnopqrstuvwxyz'),
+                'name2': this.randomizeCollection(9, '0123456789abcdefghijklmnopqrstuvwxyz'),
+                'name3': this.randomizeCollection(9, '0123456789abcdefghijklmnopqrstuvwxyz'),
+                'name4': this.randomizeCollection(9, '0123456789abcdefghijklmnopqrstuvwxyz')
+            })
+        }
     }
 
-    onSelect(event) {
-        console.log(event);
+    private randomizeCollection = (len, chars) => {
+        let result = '';
+        for(let i = len; i > 0; --i) {
+            result += chars[Math.round(Math.random() * (chars.length - 1))];
+        }
+        return result;
     }
 
-    onSubcribe(): void {
-        this.stomp.startConnect().then(() => {
-            this.stomp.done('init');            
-            this.subscription = this.stomp.subscribe('/create/stock', this.response);
+    ngOnInit() {
+        this.subscribed = false; 
+        this.state = this.senderStompService.state
+            .map((state: number) => {
+                this.stateTitle = StompState[state].toString();
+                return StompState[state]
+            });
+        this.onSubcribe(); 
+    }
+    
+    ngOnDestroy() { this.onDisconnect(); }
+    
+    onSelect(event) { console.log('Selected Chart: ', event); }
+    
+    onSubcribe(): void { if (this.subscribed) return; }
+    
+    onDisconnect(): void {
+        this.subscribed     = false;
 
-            this.subscribed = true;
-        });
+        this.stateTitle === 'CONNECTED' ? this.senderStompService.disconnect() : this.senderStompService;
     }
 
-    onUnsubcribe(): void {
-        this.stomp.disconnect().then(() => {
-            //this.subscription.unsubscribe();
-            this.subscribed = false;
-        });
-    }
+    /** Consume a message from the _orderStompService */
+    public onSendMessage() {
+        this.timeMeasurement.start = new Date().getTime();
 
-    //response
-    public response = (data) => {
-        console.log('Get All Data!');
-        let blob = new Blob([data], { type: 'application/json' });
-        let length = data.length;
+        this.subscribed = true;
+
+        let blob = new Blob([this.sampleData], { type: 'application/json' });
+        this.receiverTitle = this.sampleData.length.toString() + ' (Adet)';
+
+        this.senderStompService.publish(
+            '/app/create/createStockListByWebSocket', 
+            JSON.stringify(this.sampleData)
+        );
+
         this.timeMeasurement.end = new Date().getTime();
         const delta = this.timeMeasurement.end - this.timeMeasurement.start;
-        
+
         for(let i = 0; i < single.length; i++) {
-            if(single[i].name === 'Toplam(adet)') {
-                single[i].value = length;
+            if(single[i].name === 'Boyut(Mb)') {
+                const fileSize = blob.size / 1024;
+                const size = parseFloat(fileSize.toString()).toFixed(2);
+                single[i].value = parseFloat(size);
             }
 
-            if(single[i].name === 'Boyut(Kb)') {
-                single[i].value = blob.size;
-            }
-
-            if(single[i].name === 'Süre(ms)') {
-                single[i].value = delta;
+            if(single[i].name === 'Süre(S)') {
+                const second = delta / 1000;
+                const time = parseFloat(second.toString()).toFixed(2);
+                single[i].value = parseFloat(time);
             }
         }
-        
-        Object.assign(this, { single });
+
+        Object.assign(this, { single }); 
     }
+
 }

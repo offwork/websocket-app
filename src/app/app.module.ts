@@ -11,6 +11,7 @@ import {
   MdToolbarModule } from '@angular/material';
 
 import { NgxChartsModule } from '@swimlane/ngx-charts';
+import { StompService } from 'ng2-stomp-service';
 
 import { AppComponent } from './app.component';
 import { 
@@ -19,8 +20,11 @@ import {
   SocketRecipientComponent,
   SocketSenderComponent } from './components';
 
-import { RestAPIServices } from './services/rest-api.services';
-import { StompService } from 'ng2-stomp-service';
+import { 
+  RestAPIServices,
+  StompMessageService,
+  ReceiverStompService, receiverStompServiceFactory,
+  SenderStompService, senderStompServiceFactory } from './services';
 
 import 'hammerjs';
 
@@ -50,7 +54,15 @@ import 'hammerjs';
   ],
   providers: [
     RestAPIServices,
-    StompService,
+    StompMessageService,
+    {
+      provide: ReceiverStompService,
+      useFactory: receiverStompServiceFactory
+    },
+    {
+      provide: SenderStompService,
+      useFactory: senderStompServiceFactory
+    }
   ],
   bootstrap: [AppComponent]
 })

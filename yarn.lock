@@ -181,6 +181,18 @@
     magic-string "^0.22.3"
     source-map "^0.5.6"
 
+"@stomp/ng2-stompjs@^0.4.2":
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/@stomp/ng2-stompjs/-/ng2-stompjs-0.4.2.tgz#866ad3c35b7bcef6208d00eee1b0aafb3160b536"
+  dependencies:
+    "@stomp/stompjs" "^3.1.1"
+
+"@stomp/stompjs@^3.1.1":
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/@stomp/stompjs/-/stompjs-3.1.1.tgz#a1bf67dd54789887b31e7625384119c930311113"
+  optionalDependencies:
+    websocket "^1.0.24"
+
 "@swimlane/ngx-charts@^6.0.2":
   version "6.0.2"
   resolved "https://registry.yarnpkg.com/@swimlane/ngx-charts/-/ngx-charts-6.0.2.tgz#0ab346cf9569fd62433d329a31cfd9c07bf0edab"
@@ -3524,9 +3536,13 @@ mute-stream@0.0.7:
   version "0.0.7"
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-0.0.7.tgz#3075ce93bc21b8fab43e1bc4da7e8115ed1e7bab"
 
-nan@^2.3.0, nan@^2.3.2, nan@^2.3.3:
+nan@^2.3.0, nan@^2.3.2:
   version "2.6.2"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.6.2.tgz#e4ff34e6c95fdfb5aecc08de6596f43605a7db45"
+
+nan@^2.3.3:
+  version "2.7.0"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.7.0.tgz#d95bf721ec877e08db276ed3fc6eb78f9083ad46"
 
 ncname@1.0.x:
   version "1.0.0"
@@ -5742,7 +5758,7 @@ websocket-extensions@>=0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/websocket-extensions/-/websocket-extensions-0.1.1.tgz#76899499c184b6ef754377c2dbb0cd6cb55d29e7"
 
-websocket@latest:
+websocket@^1.0.24, websocket@latest:
   version "1.0.24"
   resolved "https://registry.yarnpkg.com/websocket/-/websocket-1.0.24.tgz#74903e75f2545b6b2e1de1425bc1c905917a1890"
   dependencies:

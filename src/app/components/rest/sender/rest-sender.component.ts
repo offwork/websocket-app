@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
-import { SampleModel } from '../../../models/sample.model';
-import { single } from '../../../models/chart-info.model';
-import { RestAPIServices } from '../../../services/rest-api.services';
+import { SampleModel, single } from '../../../models';
+import { RestAPIServices } from '../../../services';
 
 @Component({
     selector: 'app-rest-sender',
@@ -18,21 +17,38 @@ import { RestAPIServices } from '../../../services/rest-api.services';
 })
 export class RestSenderComponent {
 
+    sampleData      = [];
     isDisplay       = false;
-    // Advanced Pie Chart
+    /* Pie Chart Options */
     showLegend      = true;
-    gradient        = false;
     showLabels      = true;
     explodeSlices   = false;
     doughnut        = false;
+    gradient        = false;
+    receiverTitle   = ""
     colorScheme     = {
       domain        : ['#2ecc71', '#e74c3c', '#f1c40f', '#34495e']
     };
 
-    sampleData: SampleModel[];
-
     constructor(private service: RestAPIServices) {
-        this.service.getAllData().subscribe(data => this.sampleData = data);
+        //this.service.getAllData().subscribe(data => this.sampleData = data);
+        for (let i = 0; i < 500; i++) {
+            this.sampleData.push({ 
+                'name': this.randomizeCollection(9, '0123456789abcdefghijklmnopqrstuvwxyz'),
+                'name1': this.randomizeCollection(9, '0123456789abcdefghijklmnopqrstuvwxyz'),
+                'name2': this.randomizeCollection(9, '0123456789abcdefghijklmnopqrstuvwxyz'),
+                'name3': this.randomizeCollection(9, '0123456789abcdefghijklmnopqrstuvwxyz'),
+                'name4': this.randomizeCollection(9, '0123456789abcdefghijklmnopqrstuvwxyz')
+            })
+        }
+    }
+
+    private randomizeCollection = (len, chars) => {
+        let result = '';
+        for(let i = len; i > 0; --i) {
+            result += chars[Math.round(Math.random() * (chars.length - 1))];
+        }
+        return result;
     }
 
     onSelect(event) {
@@ -41,7 +57,6 @@ export class RestSenderComponent {
 
     sendAllData() {
         let blob: Blob;
-        let length: number;
         let timeMeasurement: any = {};
         timeMeasurement.start = new Date().getTime();
 
@@ -55,20 +70,22 @@ export class RestSenderComponent {
                 () => {
                     timeMeasurement.end = new Date().getTime();
                     const delta = timeMeasurement.end - timeMeasurement.start;
+
                     for(let i = 0; i < single.length; i++) {
-                        if(single[i].name === 'Toplam(adet)') {
-                            single[i].value = length;
+                        if(single[i].name === 'Boyut(Mb)') {
+                            const fileSize = blob.size / 1024;
+                            const size = parseFloat(fileSize.toString()).toFixed(2);
+                            single[i].value = parseFloat(size);
                         }
 
-                        if(single[i].name === 'Boyut(Kb)') {
-                            single[i].value = blob.size;
-                        }
-
-                        if(single[i].name === 'Süre(ms)') {
-                            single[i].value = delta;
+                        if(single[i].name === 'Süre(S)') {
+                            const second = delta / 1000;
+                            const time = parseFloat(second.toString()).toFixed(2);
+                            console.log('Time:', time);
+                            single[i].value = parseFloat(time);
                         }
                     }
-                    this.isDisplay = true
+                    this.isDisplay = true;
                     Object.assign(this, { single });
                 }
         );

@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
-import { SampleModel } from '../../../models/sample.model';
-import { single } from '../../../models/chart-info.model';
-import { RestAPIServices } from '../../../services/rest-api.services';
+import { SampleModel, single } from '../../../models';
+import { RestAPIServices } from '../../../services';
 
 @Component({
     selector: 'app-rest-recipient',
@@ -18,13 +17,15 @@ import { RestAPIServices } from '../../../services/rest-api.services';
 })
 export class RestRecipientComponent {
     
+    restData        : SampleModel[];
     isDisplay       = false;
-    // Advanced Pie Chart
+    /* Pie Chart Options */
     showLegend      = true;
-    gradient        = false;
     showLabels      = true;
     explodeSlices   = false;
     doughnut        = false;
+    gradient        = false;
+    receiverTitle   = ""
     colorScheme     = {
       domain        : ['#2ecc71', '#e74c3c', '#f1c40f', '#34495e']
     };
@@ -37,34 +38,37 @@ export class RestRecipientComponent {
 
     getAllData() {
         let blob: Blob;
-        let length: number;
         let timeMeasurement: any = {};
         timeMeasurement.start = new Date().getTime();
-
+        
         this.service.getAllData()
             .subscribe(
                 response => {
-                    length = response.length;
-                    blob = new Blob([response], { type: 'application/json' });
+                    this.receiverTitle = response.length.toString() + ' (Adet)';
+                    this.restData = response;
+                    blob = new Blob([this.restData], { type: 'application/json' });
+                    console.log('Response: ', this.restData);
                 },
                 error => {console.log('an error has occurred!!');},
                 () => {
                     timeMeasurement.end = new Date().getTime();
                     const delta = timeMeasurement.end - timeMeasurement.start;
+
                     for(let i = 0; i < single.length; i++) {
-                        if(single[i].name === 'Toplam(adet)') {
-                            single[i].value = length;
+                        if(single[i].name === 'Boyut(Mb)') {
+                            const fileSize = blob.size / 1024;
+                            const size = parseFloat(fileSize.toString()).toFixed(2);
+                            single[i].value = parseFloat(size);
                         }
 
-                        if(single[i].name === 'Boyut(Kb)') {
-                            single[i].value = blob.size;
-                        }
-
-                        if(single[i].name === 'Süre(ms)') {
-                            single[i].value = delta;
+                        if(single[i].name === 'Süre(S)') {
+                            const second = delta / 1000;
+                            const time = parseFloat(second.toString()).toFixed(2);
+                            console.log('Time:', time);
+                            single[i].value = parseFloat(time);
                         }
                     }
-                    this.isDisplay = true
+                    this.isDisplay = true;
                     Object.assign(this, { single });
                 }
         );
